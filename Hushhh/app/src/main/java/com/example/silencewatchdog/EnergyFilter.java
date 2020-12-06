@@ -3,7 +3,8 @@ package com.example.silencewatchdog;
 import android.util.Log;
 
 public class EnergyFilter {
-   // private final double LECTURER_VARIANCE_WEIGHT = 0.4;
+    private final String TAG = this.getClass().getSimpleName();
+    // private final double LECTURER_VARIANCE_WEIGHT = 0.4;
     private double lecturerVariance = 6;
     private final int BUFFER_SIZE = 20;
     private double currentBuffer[];
@@ -24,9 +25,7 @@ public class EnergyFilter {
         this.currentBufferAvg = 0;
         this.prevBufferAvg = 0;
         this.confidence = 1;
-       // this.lecturerVariance = currentBufferAvg;
-
-
+        // this.lecturerVariance = currentBufferAvg;
     }
 
     public void reportFalsePositive() {
@@ -40,14 +39,13 @@ public class EnergyFilter {
          * update maxPower Per Session and normalize it
          * calculate variance and enter to buffer
          */
-       // updateMaxPower(powers);
-       // double[] normalizedPowers = normalizePowersBaseMaxPower(powers);
+        // updateMaxPower(powers);
+        // double[] normalizedPowers = normalizePowersBaseMaxPower(powers);
 
         double avgSumSquarePowers = this.getAvg(powers);
         this.enterNewAvgToBuffer(avgSumSquarePowers);
 
         return isToShhh();
-
     }
 
     private double avgSumOfSquareOfPowers(double powers[]) {
@@ -60,7 +58,7 @@ public class EnergyFilter {
 
     private void enterNewAvgToBuffer(double avgOfPowers) {
         this.prevBufferAvg = this.currentBufferAvg;
-        double oldVal =   this.currentBuffer[this.index % BUFFER_SIZE];
+        double oldVal = this.currentBuffer[this.index % BUFFER_SIZE];
         this.currentBuffer[this.index % BUFFER_SIZE] = avgOfPowers;
 
 
@@ -69,16 +67,16 @@ public class EnergyFilter {
 
 
         //if the sample will cause shh or there is silence dont take it into the Buffer
-        if(getSampleDelta() > lecturerVariance || getSampleDelta() < -lecturerVariance){
+        if (getSampleDelta() > lecturerVariance || getSampleDelta() < -lecturerVariance) {
             this.currentBuffer[this.index % BUFFER_SIZE] = oldVal;
         }
 
         this.index++;
 
 
-        Log.d("EnergyFilter","previous average: " + prevBufferAvg + ", current average: " + currentBufferAvg);
+        Log.d(TAG, "previous average: " + prevBufferAvg + ", current average: " + currentBufferAvg);
         delta = (currentBufferAvg - prevBufferAvg);
-        Log.d("EnergyFilterDelta", "Delta = " + delta);
+        Log.d(TAG, "Delta = " + delta);
     }
 
     private double getAvg(short[] arr) {
@@ -104,17 +102,14 @@ public class EnergyFilter {
         }
 
         // take confidence into account
-        if (Math.random() > this.confidence) {
-            return false;
-        }
-        return true;
+        return !(Math.random() > this.confidence);
     }
 
     private double getSampleDelta() {
         return this.currentBufferAvg - this.prevBufferAvg;
     }
+
     public double getLastDelta() {
         return delta;
     }
-
 }

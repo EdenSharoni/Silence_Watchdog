@@ -3,6 +3,7 @@ package com.example.silencewatchdog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -27,6 +28,8 @@ import com.muddzdev.styleabletoastlibrary.StyleableToast;
 import java.text.DecimalFormat;
 
 public class WatchdogMainActivity extends AppCompatActivity {
+
+    private final String TAG = this.getClass().getSimpleName();
 
     private Button ToggleStartStopButton;
     private Button soundControlBtn;
@@ -85,7 +88,6 @@ public class WatchdogMainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_watchdog_main);
         ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
-
         initGUIelements();
 
         arrayListSpinnerAdaptor();
@@ -129,8 +131,7 @@ public class WatchdogMainActivity extends AppCompatActivity {
         mode_selector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (isStartRecording)
-                    toggleButtonFunction();
+                if (isStartRecording) toggleButtonFunction(); //stop recording and change mode.
                 modeController();
             }
 
@@ -139,6 +140,8 @@ public class WatchdogMainActivity extends AppCompatActivity {
                 //Do NOTHING
             }
         });
+
+        //settings
         soundControlBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -146,16 +149,13 @@ public class WatchdogMainActivity extends AppCompatActivity {
                 startActivity(soundControllerIntent);
             }
         });
+
         ToggleStartStopButton.setOnClickListener(new View.OnClickListener() {
-
-
             @Override
             public void onClick(View v) {
                 toggleButtonFunction();
-
             }
         });
-
     }
 
     public void toggleButtonFunction() {
@@ -166,8 +166,6 @@ public class WatchdogMainActivity extends AppCompatActivity {
                 report_false_record_btn.setVisibility(View.VISIBLE);
             ToggleStartStopButton.setText("Stop");
             energyfilter = new EnergyFilter();
-
-
         } else {
             if (mode_selector.getSelectedItem().equals("Classroom"))
                 report_false_record_btn.setVisibility(View.GONE);
@@ -195,17 +193,13 @@ public class WatchdogMainActivity extends AppCompatActivity {
                 break;
         }
         if (!permissionToRecordAccepted) finish();
-
     }
-
 
     private void onRecord(boolean start) {
         if (start) {
             listenToMicrophoneStart();
             startListenAudio();
-        } else {
-            listenToMicrophoneStop();
-        }
+        } else listenToMicrophoneStop();
     }
 
     private void listenToMicrophoneStop() {
@@ -213,7 +207,6 @@ public class WatchdogMainActivity extends AppCompatActivity {
         thread.interrupt();
         thread = null;
         audio.stop();
-
     }
 
     public void updateMediaPlayer() {
@@ -223,51 +216,15 @@ public class WatchdogMainActivity extends AppCompatActivity {
         String vol_string = preferences.getString(volume_key, "100");
         volume = Float.parseFloat(vol_string);
         String sound_name = preferences.getString(sound_key, "shhh");
-        switch (sound_name) {
-            case "shhh":
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.shhh);
-                break;
-            case "shhh_2":
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.shhh_2);
-                break;
-            case "shhhtwice":
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.shhhtwice);
-                break;
-            case "shutup_man":
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.shutup_man);
-                break;
-            case "powerfulshhh":
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.powerfulshhh);
-                break;
-            case "pullyourselftogether_man":
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.pullyourselftogether_man);
-                break;
-            case "pullyourselftogether_women":
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.pullyourselftogether_women);
-                break;
-            case "shhh_man":
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.shhh_man);
-                break;
-            case "shutup_women":
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.shutup_women);
-                break;
-            case "stoptalking":
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.stoptalking);
-                break;
-            case "stopthat_women":
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.stopthat_women);
-                break;
-            default:
-                quiet_sound = MediaPlayer.create(getApplicationContext(), R.raw.shhh);
 
-        }
+        int soundId = getResources().getIdentifier(sound_name, "raw", getPackageName());
+        quiet_sound = MediaPlayer.create(getApplicationContext(), soundId);
         float volume_d = volume / 100f;
         quiet_sound.setVolume(volume_d, volume_d);
     }
 
     private void listenToMicrophoneStart() {
         isThreadRun = true;
-
 
         try {
             bufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO,
@@ -276,10 +233,8 @@ public class WatchdogMainActivity extends AppCompatActivity {
                     AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT, bufferSize);
         } catch (Exception e) {
-            Log.e("TrackingFlow", "Exception", e);
+            Log.e(TAG, "Exception", e);
         }
-
-
         audio.startRecording();
     }
 
@@ -300,7 +255,6 @@ public class WatchdogMainActivity extends AppCompatActivity {
                     readAudioBuffer();//After this call we can get the last value assigned to the lastLevel variable
                     RequestSilence();
                     runOnUiThread(new Runnable() {
-
                         @Override
                         public void run() {
                             if (current_mode.equals("Custom"))
@@ -309,8 +263,6 @@ public class WatchdogMainActivity extends AppCompatActivity {
                                 noise_level.setText(new DecimalFormat("##.##").format(energyfilter.getLastDelta()));
                         }
                     });
-
-
                 }
             }
         });
@@ -326,18 +278,12 @@ public class WatchdogMainActivity extends AppCompatActivity {
 
         switch (current_mode) {
             case "Custom":
-                if (current_threshold < amp) {
-                    playSound();
-                }
+                if (current_threshold < amp) playSound();
                 break;
             case "Classroom":
-
-                if (energyfilter.nextSample(buffer)) {
-                    playSound();
-                }
+                if (energyfilter.nextSample(buffer)) playSound();
                 break;
         }
-
     }
 
     public void playSound() {
@@ -346,14 +292,10 @@ public class WatchdogMainActivity extends AppCompatActivity {
     }
 
     private void readAudioBuffer() {
-
         try {
             buffer = new short[bufferSize];
-            if (audio != null) {
-                // Sense the voice...
-                buffer_size_read = audio.read(buffer, 0, bufferSize);
-            }
-
+            // Sense the voice...
+            if (audio != null) buffer_size_read = audio.read(buffer, 0, bufferSize);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -361,7 +303,7 @@ public class WatchdogMainActivity extends AppCompatActivity {
 
     public void updateAmplitude(int bufferReadNum) {
         if (bufferReadNum == 0) {
-            Log.d("updateAmplitude", "bufferReadNum = 0 return");
+            Log.d(TAG, "bufferReadNum = 0 return");
             return;
         }
         double sumLevel = 0;
@@ -400,11 +342,8 @@ public class WatchdogMainActivity extends AppCompatActivity {
 
     private void modeController() {
         runOnUiThread(new Runnable() {
-
             @Override
             public void run() {
-
-
                 report_false_record_btn.setVisibility(View.GONE);
                 if (mode_selector.getSelectedItem().equals("Classroom")) {
                     lecturerText.setVisibility(View.VISIBLE);
@@ -415,8 +354,6 @@ public class WatchdogMainActivity extends AppCompatActivity {
                     min_threshold_text.setVisibility(View.GONE);
                     threshold_indicator_text.setVisibility(View.GONE);
                     noise_level_text_view.setText(R.string.Classroom_DEBUG_TEXT);
-
-
                 } else {
                     lecturerText.setVisibility(View.GONE);
                     lecturer_selector.setVisibility(View.GONE);
@@ -430,5 +367,4 @@ public class WatchdogMainActivity extends AppCompatActivity {
             }
         });
     }
-
 }
